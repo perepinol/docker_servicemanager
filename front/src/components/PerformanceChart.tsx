@@ -37,7 +37,7 @@ const FilterItem = (props: ItemFilterProps) => {
       />}
       style={{ padding: 0 }}
     />
-    <CardContent style={{ padding: '0 2em' }}>
+    <CardContent style={{ padding: '0 0 0 1.5em' }}>
       <Grid container direction='column' wrap='nowrap'>
         {Object.entries(props.state).map(([metricName, value]) =>
           <Grid item key={metricName}>
@@ -68,8 +68,8 @@ export const PerformanceChart = (props: PerformanceChartProps) => {
     .reduce((a, b) => joinBooleanObjects(a, Object(b), (p1, p2) => p1 || p2), {});
   const theme = useTheme();
 
-  return <Grid container spacing={2} wrap='nowrap'>
-    <Grid item style={{ flex: 1 }}>
+  return <Grid container spacing={2}>
+    <Grid item xs={12}>
       <Chart
         chartType='LineChart'
         data={props.chartState.asGoogleChartData()}
@@ -87,12 +87,12 @@ export const PerformanceChart = (props: PerformanceChartProps) => {
         }}
       />
     </Grid>
-    <Grid item>
-      <Grid container spacing={1} direction='column'>
-        <Grid item>
+    <Grid item xs={12}>
+      <Grid container spacing={1}>
+        <Grid item xs={12}>
           <Typography variant='h5'>Filters</Typography>
         </Grid>
-        <Grid item>
+        <Grid item xs={12}>
           {
             Object.entries(availableProps).map(([prop, value]) => <FormControlLabel
               key={prop}

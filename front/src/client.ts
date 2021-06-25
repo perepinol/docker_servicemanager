@@ -26,7 +26,7 @@ export const decodeToken = (token: string): Promise<JWTData> => fetch(LDAP_URL +
 })
   .then(response => response.json());
 
-export const getStats = (token: string | null): Promise<PerformanceData> => fetch(PERFORMANCE_URL, {
+/*export const getStats = (token: string | null): Promise<PerformanceData> => fetch(PERFORMANCE_URL, {
   headers: token ? {
     'Authorization': 'Bearer ' + token
   } : undefined
@@ -38,9 +38,9 @@ export const getContainers = (token: string | null): Promise<Container[]> => fet
     'Authorization': 'Bearer ' + token
   } : undefined
 })
-  .then(response => response.json());
+  .then(response => response.json());*/
 
-/*export const getStats = (): Promise<PerformanceData> => Promise.resolve({
+export const getStats = (): Promise<PerformanceData> => Promise.resolve({
   'name': {
     aliases: ['nameblabla'],
     stats: [{
@@ -94,7 +94,7 @@ export const getContainers = (): Promise<Container[]> => Promise.resolve([{
   status: 'paused',
   start_time: 10,
   ports: {}
-}]);*/
+}]);
 
 export const setContainerState = (
   token: string | null,

@@ -1,10 +1,18 @@
-import { Button, CircularProgress, Grid, makeStyles, Table, TableBody, TableCell, TableHead, TableRow, Typography, TypographyProps } from '@material-ui/core';
-import { Assignment, Delete, Pause, PlayArrow, Stop } from '@material-ui/icons';
+import { CircularProgress, Grid, IconButton, makeStyles, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, TypographyProps } from '@material-ui/core';
+import { Assignment, Delete, Loop, Pause, PlayArrow, Stop, Error } from '@material-ui/icons';
 import React, { Fragment, useEffect } from 'react';
 import { useContainers, useLogs } from '../hooks';
-import { Container, ContainerStateSetter } from '../types';
+import { Container, ContainerState, ContainerStateSetter } from '../types';
 
 const T = (props: TypographyProps) => <Typography variant='body1'>{props.children}</Typography>;
+
+const statusIcons: { [key in ContainerState]: JSX.Element } = {
+  'processing': <Tooltip title='Processing'><Loop /></Tooltip>,
+  'running': <Tooltip title='Running'><PlayArrow /></Tooltip>,
+  'paused': <Tooltip title='Paused'><Pause /></Tooltip>,
+  'stopped': <Tooltip title='Stopped'><Stop /></Tooltip>,
+  'error': <Tooltip title='Error'><Error /></Tooltip>
+};
 
 const useStyles = makeStyles(theme => ({
   running: {
@@ -23,12 +31,15 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.info.light
   },
   row: {
-    '& > td': {
+    '& > div': {
       padding: '1em',
-      height: '100%',
-      '& button': {
-        margin: '1em'
-      }
+      display: 'flex',
+      alignItems: 'center'
+    }
+  },
+  head: {
+    '& p': {
+      fontWeight: 'bold'
     }
   }
 }));
@@ -49,7 +60,70 @@ const ContainerRow = ({
   const classes = useStyles();
   const disabled = container.status === 'processing';
 
-  return <TableRow className={`${classes[container.status]} ${classes.row}`} style={{ margin: '5px 0' }}>
+  return <Grid container className={`${classes[container.status]} ${classes.row}`}>
+    <Grid item md={1} xs={2}>{statusIcons[container.status]}</Grid>
+    <Grid item md={1} xs={2}><T>{container.id}</T></Grid>
+    <Grid item md={4} xs={4}><T>{container.name}</T></Grid>
+    <Grid item md={2} xs={4}>
+      <Grid container spacing={1}>
+        {
+          Object.keys(container.ports).length === 0
+            ? <Grid item><T>No ports mapped</T></Grid>
+            : Object.entries(container.ports).map(([containerPort, hostPorts]) => <Grid item xs={12} key={`${container.id}-${containerPort}`}>
+              <T>{`Container: ${containerPort}`}</T>
+              <div style={{ padding: '0 0 0 1.5em' }}>{hostPorts.map(port => <T key={`${container.id}-${containerPort}-${port}`}>{`Host: ${port}`}</T>)}</div>
+            </Grid>)
+        }
+      </Grid>
+    </Grid>
+    <Grid item md={3} xs={10}>
+      <Grid container spacing={1} justify='space-between'>
+        <Grid item>
+          <Tooltip title={'Logs'}><span>
+            <IconButton color="secondary" onClick={() => setLogs(container.id)}><Assignment /></IconButton>
+          </span></Tooltip>
+        </Grid>
+        <Grid item>
+          {
+            container.status === 'paused'
+              ? <Tooltip title='Resume'><span>
+                <IconButton color="primary" onClick={() => onChange('resume')} disabled={disabled}><PlayArrow /></IconButton>
+              </span></Tooltip>
+              : <Tooltip title='Pause'><span>
+                <IconButton color="primary" disabled={disabled || container.status !== 'running'} onClick={() => onChange('pause')}><Pause /></IconButton>
+              </span></Tooltip>
+          }
+        </Grid>
+        <Grid item>
+          {
+            container.status !== 'stopped' && container.status !== 'error'
+              ? <Tooltip title='Stop'><span>
+                <IconButton color="primary" onClick={() => onChange('stop')} disabled={disabled}><Stop /></IconButton>
+              </span></Tooltip>
+              : <Tooltip title='Start'><span>
+                <IconButton color="primary" disabled={disabled} onClick={() => onChange('start')}><PlayArrow /></IconButton>
+              </span></Tooltip>
+          }
+        </Grid>
+        <Grid item>
+          <Tooltip title='Delete'><span>
+            <IconButton
+              color="secondary"
+              onClick={onDelete}
+              disabled={disabled || (container.status !== 'stopped' && container.status !== 'error')}
+            >
+              <Delete />
+            </IconButton>
+          </span></Tooltip>
+        </Grid>
+      </Grid>
+    </Grid>
+    <Grid item xs={2} md={1}>
+      {updating && <CircularProgress />}
+    </Grid>
+  </Grid>;
+
+  /*return <TableRow className={`${classes[container.status]} ${classes.row}`} style={{ margin: '5px 0' }}>
     <TableCell><T>{container.id}</T></TableCell>
     <TableCell><T>{container.name}</T></TableCell>
     <TableCell><T>{container.status}</T></TableCell>
@@ -125,10 +199,11 @@ const ContainerRow = ({
       </Button>
     </TableCell>
     <TableCell><CircularProgress style={{ opacity: updating ? 1 : 0 }} /></TableCell>
-  </TableRow>;
+  </TableRow>;*/
 };
 
 export const ContainerTable = () => {
+  const classes = useStyles();
   const containerState = useContainers(null);
   const time_offset = 0;
   const logs = useLogs(null, time_offset);
@@ -139,7 +214,27 @@ export const ContainerTable = () => {
     return () => clearInterval(id);
   }, []);
 
-  return <Table>
+  return <Grid container spacing={1}>
+    <Grid item xs={12}>
+      <Grid container className={`${classes.row} ${classes.head}`}>
+        <Grid item md={1} xs={2}></Grid>
+        <Grid item md={1} xs={2}><T>Id</T></Grid>
+        <Grid item md={4} xs={4}><T>Name</T></Grid>
+        <Grid item md={2} xs={4}><T>Mapped ports</T></Grid>
+      </Grid>
+    </Grid>
+    {containerState.containerList.map(container => <Grid item xs={12} key={container.id}>
+      <ContainerRow
+        container={container}
+        updating={containerState.containerUpdate.includes(container.id)}
+        onChange={state => containerState.changeContainerState(container.id, state)}
+        onDelete={() => containerState.deleteContainer(container.id)}
+        setLogs={logs.setLogs}
+      />
+    </Grid>)}
+  </Grid>;
+
+  /*return <Table>
     <TableHead>
       <TableCell><T>Id</T></TableCell>
       <TableCell><T>Name</T></TableCell>
@@ -158,7 +253,7 @@ export const ContainerTable = () => {
         setLogs={logs.setLogs}
       />)}
     </TableBody>
-  </Table>;
+  </Table>;*/
 };
 
 /*
