@@ -1,3 +1,4 @@
+import moment, { Moment } from 'moment';
 import {
   JWTData,
   Container,
@@ -114,13 +115,13 @@ export const deleteCont = (token: string | null, id: string): Promise<Response> 
   method: 'DELETE'
 });
 
-export const getLogs = (token: string | null, id: string, since: number, until: number): Promise<string[]> => {
+export const getLogs = (token: string | null, id: string, since?: Moment, until?: Moment): Promise<string[]> => {
   let filters = '';
-  if (since < 0) {
-    filters += `since=${-since}`;
+  if (since !== undefined) {
+    filters += `since=${moment().diff(since, 's')}`;
   }
-  if (until < 0) {
-    filters += `until=${-until}`;
+  if (until !== undefined) {
+    filters += `${filters ? '&' : ''}until=${moment().diff(until, 's')}`;
   }
   return fetch(MANAGER_URL + `/${id}/logs?${filters}`, {
     headers: token ? {

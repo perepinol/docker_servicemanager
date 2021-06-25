@@ -1,3 +1,5 @@
+import moment from 'moment';
+import { Moment } from 'moment';
 import { useState, useEffect } from 'react';
 import { getLogs } from '../client';
 
@@ -5,20 +7,18 @@ interface LogHookData {
   logs: string[],
   containerId?: string,
   setContainerId: (id?: string) => void,
-  since: number,
-  until: number,
-  setFilters: (since: number, until: number) => void,
+  since?: Moment,
+  until?: Moment,
+  setFilters: (obj: { since?: Moment, until?: Moment; }) => void,
   logsLoading: boolean;
 }
 
-const DEFAULT_SINCE = -5 * 60;
-
-export const useLogs = (token: string | null, time_offset: number): LogHookData => {
+export const useLogs = (token: string | null): LogHookData => {
   const [logs, setLogs] = useState<string[]>([]);
   const [containerId, setContainerId] = useState<string>();
   const [logsLoading, setLogsLoading] = useState(false);
-  const [since, setSince] = useState(DEFAULT_SINCE < time_offset ? time_offset : DEFAULT_SINCE);
-  const [until, setUntil] = useState(0);
+  const [since, setSince] = useState<Moment | undefined>(moment().subtract(1, 'h'));
+  const [until, setUntil] = useState<Moment>();
 
   const refresh = () => {
     if (!containerId) return;
@@ -34,10 +34,15 @@ export const useLogs = (token: string | null, time_offset: number): LogHookData 
   useEffect(() => {
     if (containerId) {
       refresh();
-      const interval = setInterval(refresh, 1000);
+      const interval = setInterval(refresh, 5000);
       return () => clearInterval(interval);
     }
   }, [containerId, since, until]);
+
+  const setFilters = ({ since: newSince, until: newUntil }: { since?: Moment, until?: Moment; }) => {
+    if (newUntil) setUntil(newUntil.isBefore(moment()) ? newUntil : moment());
+    if (newSince) setSince(newSince.isBefore(newUntil ?? until) ? newSince : (newUntil ?? until));
+  };
 
   return {
     logs,
@@ -47,7 +52,7 @@ export const useLogs = (token: string | null, time_offset: number): LogHookData 
 
     since,
     until,
-    setFilters: (since, until) => { setSince(since); setUntil(until); },
+    setFilters,
 
     logsLoading
   };

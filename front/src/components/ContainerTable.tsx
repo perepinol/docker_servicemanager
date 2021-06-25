@@ -1,6 +1,8 @@
-import { CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, makeStyles, Slider, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, TypographyProps } from '@material-ui/core';
+import { CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, makeStyles, Tooltip, Typography, TypographyProps } from '@material-ui/core';
 import { Assignment, Delete, Loop, Pause, PlayArrow, Stop, Error } from '@material-ui/icons';
-import React, { Fragment, useEffect } from 'react';
+import { DateTimePicker } from '@material-ui/pickers';
+import moment, { Moment } from 'moment';
+import React, { useEffect } from 'react';
 import { useContainers, useLogs } from '../hooks';
 import { Container, ContainerState, ContainerStateSetter } from '../types';
 
@@ -62,8 +64,7 @@ const ContainerRow = ({
 
   return <Grid container className={`${classes[container.status]} ${classes.row}`}>
     <Grid item md={1} xs={2}>{statusIcons[container.status]}</Grid>
-    <Grid item md={4} xs={4}><T noWrap>{container.id}</T></Grid>
-    <Grid item md={1} xs={2}><T noWrap>{container.name}</T></Grid>
+    <Grid item md={5} xs={6}><T noWrap>{container.name}</T></Grid>
     <Grid item md={2} xs={4}>
       <Grid container spacing={1}>
         {
@@ -127,12 +128,11 @@ const ContainerRow = ({
 export const ContainerTable = () => {
   const classes = useStyles();
   const containerState = useContainers(null);
-  const time_offset = 0;
-  const logs = useLogs(null, time_offset);
+  const logs = useLogs(null);
 
   useEffect(() => {
     containerState.refresh();
-    const id = setInterval(containerState.refresh, 2000);
+    const id = setInterval(containerState.refresh, 10000);
     return () => clearInterval(id);
   }, []);
 
@@ -140,8 +140,7 @@ export const ContainerTable = () => {
     <Grid item xs={12}>
       <Grid container className={`${classes.row} ${classes.head}`}>
         <Grid item md={1} xs={2}></Grid>
-        <Grid item md={4} xs={4}><T>Id</T></Grid>
-        <Grid item md={1} xs={2}><T>Name</T></Grid>
+        <Grid item md={5} xs={6}><T>Name</T></Grid>
         <Grid item md={2} xs={4}><T>Mapped ports</T></Grid>
       </Grid>
     </Grid>
@@ -158,19 +157,25 @@ export const ContainerTable = () => {
       <DialogTitle >Logs: {containerState.containerList.find(c => c.id === logs.containerId)?.name}</DialogTitle>
       <DialogContent>{logs.logs.map((entry, i) => <p key={i}>{entry}</p>)}</DialogContent>
       <DialogActions style={{ padding: '1em' }}>
-        <Slider
-          value={[logs.since, logs.until]}
-          min={time_offset}
-          max={0}
-          valueLabelDisplay='auto'
-          onChangeCommitted={(_, value: number | number[]) => {
-            const values = value as [number, number];
-            logs.setFilters(...values);
-          }}
-          getAriaValueText={(value) => {
-            if (value === 0) return 'Now';
-            return value.toString();
-          }}
+        <DateTimePicker
+          label='Since'
+          inputVariant='outlined'
+          value={logs.since ?? null}
+          onChange={since => logs.setFilters({ since: since ? since as Moment : undefined })}
+          disableFuture
+          ampm={false}
+          autoOk
+          openTo='hours'
+        />
+        <DateTimePicker
+          label='Until'
+          inputVariant='outlined'
+          value={logs.until ?? null}
+          onChange={until => logs.setFilters({ until: until ? until as Moment : undefined })}
+          disableFuture
+          ampm={false}
+          autoOk
+          openTo='hours'
         />
       </DialogActions>
     </Dialog>

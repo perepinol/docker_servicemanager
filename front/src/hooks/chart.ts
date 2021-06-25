@@ -8,7 +8,8 @@ import {
   MetricName,
   ChartHookData,
   KeyState,
-  GoogleChartsData
+  GoogleChartsData,
+  ApexChartsData
 } from '../types';
 
 const fillArray = <T>(arr: T[] = [], fill: T, l: number): T[] => {
@@ -91,6 +92,20 @@ export const useChart = (token: string | null): ChartHookData => {
     return [headerRow, ...gcdata.sort((dp1, dp2) => compareLists(dp1[0] as number[], dp2[0] as number[]))];
   };
 
+  const asApexChartsData = (): ApexChartsData => Object.entries(data)
+    .map(([id, container]) => {
+      if (!Object.keys(keyState).includes(id)) return [];
+      const includedKeys = Object.entries(keyState[id]).filter(entry => entry[1]).map(entry => entry[0]) as MetricName[];
+      return includedKeys.map(key => ({
+        name: shortest(container.aliases) + ' - ' + key,
+        data: container.stats.map(stat => ({
+          x: moment(stat.timestamp).unix() * 1000,
+          y: stat[key] * 100
+        }))
+      }));
+    })
+    .reduce((accum, curr) => [...accum, ...curr], [] as ApexChartsData);
+
   useEffect(updateKeyState, [data]);
 
   return {
@@ -100,6 +115,7 @@ export const useChart = (token: string | null): ChartHookData => {
 
     refresh,
     asGoogleChartData,
+    asApexChartsData,
     changeState
   };
 };

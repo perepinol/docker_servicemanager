@@ -15,6 +15,11 @@ LDAP_URL = LDAP_URL.rstrip('/') if LDAP_URL else None
 CADVISOR_URL = os.getenv('CADVISOR_URL')
 CADVISOR_URL = CADVISOR_URL.rstrip('/') if CADVISOR_URL else None
 ADMIN_GID = os.getenv('ADMIN_GID')
+PERFORMANCE_DECIMALS = os.getenv('PERFORMANCE_DECIMALS')
+try:
+    PERFORMANCE_DECIMALS = int(PERFORMANCE_DECIMALS) if PERFORMANCE_DECIMALS else 7
+except ValueError:
+    exit(1)
 
 
 def nanosecond_delta(start, end):
@@ -46,11 +51,18 @@ class Performance(object):
                 'aliases': [alias for alias in value['aliases'] if key not in alias],
                 'stats': [{
                     'timestamp': stats[i]['timestamp'],
-                    'CPU':
-                        (stats[i]['cpu']['usage']['total'] - stats[i - 1]['cpu']['usage']['total']) /
-                        nanosecond_delta(stats[i - 1]['timestamp'], stats[i]['timestamp']) /
-                        len(stats[i]['cpu']['usage']['per_cpu_usage']),
-                    'Memory': stats[i]['memory']['usage'] / value['spec']['memory']['limit']
+                    'CPU': round(
+                        (
+                            (stats[i]['cpu']['usage']['total'] - stats[i - 1]['cpu']['usage']['total']) /
+                                    nanosecond_delta(stats[i - 1]['timestamp'], stats[i]['timestamp']) /
+                                    len(stats[i]['cpu']['usage']['per_cpu_usage'])
+                        ) if value['spec']['has_cpu'] else 0,
+                        PERFORMANCE_DECIMALS
+                    ),
+                    'memory': round(
+                        (stats[i]['memory']['usage'] / value['spec']['memory']['limit']) if value['spec']['has_memory'] else 0, 
+                        PERFORMANCE_DECIMALS
+                    )
                 } for i in range(1, len(value['stats']))]
             }
         return result
@@ -79,7 +91,8 @@ class ContainerResource(object):
         until_param = req.get_param_as_int('until', min_value=0)
         since = datetime.now() - timedelta(seconds=since_param) if since_param else None
         until = datetime.now() - timedelta(seconds=until_param) if until_param else None
-        resp.media = container.logs(timestamps=True, since=since, until=until).decode('utf-8').strip().split('\n')
+        logs = container.logs(timestamps=True, since=since, until=until).decode('utf-8').strip().split('\n')
+        resp.media = list(filter(lambda l: len(l) > 0, logs))
 
     def on_post_status(self, req, resp, cont_id, command):
         container = ContainerResource.get_or_raise(cont_id)

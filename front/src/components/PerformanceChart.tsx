@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, FormControlLabel, Grid, makeStyles, Switch, Typography, useTheme } from '@material-ui/core';
-import { Chart } from 'react-google-charts';
+import Chart from 'react-apexcharts';
 
 import { ChartHookData, MetricName, MetricState, PerformanceStats } from '../types';
 import { joinBooleanObjects, shortest } from '../utils';
+import { useChart } from '../hooks';
+import moment from 'moment';
 
 const useStyles = makeStyles(theme => ({
   card: {
@@ -58,32 +60,58 @@ const FilterItem = (props: ItemFilterProps) => {
 };
 
 interface PerformanceChartProps {
-  chartState: ChartHookData,
   token: string | null;
 }
 
 export const PerformanceChart = (props: PerformanceChartProps) => {
-  const availableProps: { [key: string]: boolean; } = Object
-    .values(props.chartState.keyState)
-    .reduce((a, b) => joinBooleanObjects(a, Object(b), (p1, p2) => p1 || p2), {});
-  const theme = useTheme();
+  const chartState = useChart(props.token);
+  const [update, setUpdate] = useState(true);
 
+  useEffect(() => {
+    if (update) {
+      const id = setInterval(chartState.refresh, 2000);
+      return () => clearInterval(id);
+    }
+  }, [update]);
+
+  const availableProps: { [key: string]: boolean; } = Object
+    .values(chartState.keyState)
+    .reduce((a, b) => joinBooleanObjects(a, Object(b), (p1, p2) => p1 || p2), {});
   return <Grid container spacing={2}>
-    <Grid item xs={12}>
+    <Grid item xs={12} >
       <Chart
-        chartType='LineChart'
-        data={props.chartState.asGoogleChartData()}
+        onMouseEnter={() => setUpdate(false)}
+        onMouseLeave={() => setUpdate(true)}
+        type='line'
+        series={chartState.asApexChartsData()}
+        height={600}
         options={{
-          height: 500,
-          hAxis: {
-            title: 'time'
+          xaxis: {
+            type: 'datetime'
           },
-          vAxis: {
-            title: 'Usage %'
+          yaxis: {
+            title: {
+              text: 'Usage %'
+            },
+            min: 0,
+            decimalsInFloat: 2
           },
-          legend: 'bottom',
-          interpolateNulls: true,
-          backgroundColor: theme.palette.background.paper
+          chart: {
+            height: 500,
+            animations: {
+              dynamicAnimation: {
+                enabled: false
+              }
+            },
+            zoom: {
+              enabled: false
+            }
+          },
+          tooltip: {
+            x: {
+              format: 'yyyy-MM-dd HH:mm:ss'
+            }
+          }
         }}
       />
     </Grid>
@@ -100,8 +128,8 @@ export const PerformanceChart = (props: PerformanceChartProps) => {
                 checked={value}
                 name={prop}
                 onChange={event => {
-                  for (const container in props.chartState.keyState) {
-                    props.chartState.changeState(container)(prop as MetricName, event.target.checked);
+                  for (const container in chartState.keyState) {
+                    chartState.changeState(container)(prop as MetricName, event.target.checked);
                   }
                 }}
               />}
@@ -109,15 +137,15 @@ export const PerformanceChart = (props: PerformanceChartProps) => {
             />)
           }
         </Grid>
-        {Object.entries(props.chartState.keyState).map(([id, state]) =>
-          Object.keys(props.chartState.data).includes(id) &&
-          props.chartState.data[id].stats.length > 0 &&
+        {Object.entries(chartState.keyState).map(([id, state]) =>
+          Object.keys(chartState.data).includes(id) &&
+          chartState.data[id].stats.length > 0 &&
           <Grid item key={id}>
             <FilterItem
-              name={shortest(props.chartState.data[id].aliases)}
+              name={shortest(chartState.data[id].aliases)}
               state={state}
-              changeState={props.chartState.changeState(id)}
-              currentData={props.chartState.data[id].stats[props.chartState.data[id].stats.length - 1]}
+              changeState={chartState.changeState(id)}
+              currentData={chartState.data[id].stats[chartState.data[id].stats.length - 1]}
             />
           </Grid>
         )}

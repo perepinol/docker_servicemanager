@@ -1,4 +1,4 @@
-type BooleanObject = {[key: string]: boolean};
+type BooleanObject = { [key: string]: boolean; };
 
 export const shortest = (arr: string[]): string => {
   const lengths = arr.map(value => value.length);

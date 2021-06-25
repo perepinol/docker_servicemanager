@@ -40,6 +40,8 @@ export type PerformanceData = { [key: string]: PerformanceContainer; };
 
 export type GoogleChartsData = (({ type: string, label: string; } | string)[] | (number | number[] | null)[])[];
 
+export type ApexChartsData = { name: string, data: { x: number, y: number; }[]; }[];
+
 export interface ChartHookData {
   data: PerformanceData,
   keyState: KeyState,
@@ -47,5 +49,6 @@ export interface ChartHookData {
 
   refresh: () => void,
   asGoogleChartData: () => GoogleChartsData,
+  asApexChartsData: () => ApexChartsData,
   changeState: (container: string) => (key: MetricName, newState: boolean) => void;
 }
