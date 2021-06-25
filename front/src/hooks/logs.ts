@@ -3,8 +3,8 @@ import { getLogs } from '../client';
 
 interface LogHookData {
   logs: string[],
-  logsOpen: boolean,
-  setLogs: (id: string) => void,
+  containerId?: string,
+  setContainerId: (id?: string) => void,
   since: number,
   until: number,
   setFilters: (since: number, until: number) => void,
@@ -28,7 +28,7 @@ export const useLogs = (token: string | null, time_offset: number): LogHookData 
         setLogs(logs);
         setLogsLoading(false);
       })
-      .catch(() => setLogs(['Error fetching logs']));
+      .catch(e => setLogs(['Error fetching logs: ' + e]));
   };
 
   useEffect(() => {
@@ -42,8 +42,8 @@ export const useLogs = (token: string | null, time_offset: number): LogHookData 
   return {
     logs,
 
-    logsOpen: !!containerId,
-    setLogs: setContainerId,
+    containerId,
+    setContainerId,
 
     since,
     until,

@@ -26,7 +26,7 @@ export const decodeToken = (token: string): Promise<JWTData> => fetch(LDAP_URL +
 })
   .then(response => response.json());
 
-/*export const getStats = (token: string | null): Promise<PerformanceData> => fetch(PERFORMANCE_URL, {
+export const getStats = (token: string | null): Promise<PerformanceData> => fetch(PERFORMANCE_URL, {
   headers: token ? {
     'Authorization': 'Bearer ' + token
   } : undefined
@@ -38,9 +38,9 @@ export const getContainers = (token: string | null): Promise<Container[]> => fet
     'Authorization': 'Bearer ' + token
   } : undefined
 })
-  .then(response => response.json());*/
+  .then(response => response.json());
 
-export const getStats = (): Promise<PerformanceData> => Promise.resolve({
+/*export const getStats = (): Promise<PerformanceData> => Promise.resolve({
   'name': {
     aliases: ['nameblabla'],
     stats: [{
@@ -94,13 +94,13 @@ export const getContainers = (): Promise<Container[]> => Promise.resolve([{
   status: 'paused',
   start_time: 10,
   ports: {}
-}]);
+}]);*/
 
 export const setContainerState = (
   token: string | null,
   id: string,
   state: ContainerStateSetter
-): Promise<Response> => fetch(MANAGER_URL + '/' + id + '/' + state, {
+): Promise<Response> => fetch(MANAGER_URL + `/${id}/${state}`, {
   method: 'POST',
   headers: token ? {
     'Authorization': 'Bearer ' + token
@@ -115,11 +115,17 @@ export const deleteCont = (token: string | null, id: string): Promise<Response> 
 });
 
 export const getLogs = (token: string | null, id: string, since: number, until: number): Promise<string[]> => {
-  return fetch(MANAGER_URL + '/' + id + '/logs', {
+  let filters = '';
+  if (since < 0) {
+    filters += `since=${-since}`;
+  }
+  if (until < 0) {
+    filters += `until=${-until}`;
+  }
+  return fetch(MANAGER_URL + `/${id}/logs?${filters}`, {
     headers: token ? {
       'Authorization': 'Bearer ' + token
     } : undefined,
-    body: JSON.stringify({ since: since < 0 ? -since : undefined, until: until < 0 ? -until : undefined })
   })
     .then(response => response.json());
 };

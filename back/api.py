@@ -99,7 +99,7 @@ class ContainerResource(object):
 
     def on_delete_cont(self, req, resp, cont_id):
         container = ContainerResource.get_or_raise(cont_id)
-        if ContainerResource.get_status(container) != 'stopped':
+        if ContainerResource.get_status(container) not in ['stopped', 'error']:
             raise falcon.HTTPPreconditionFailed('Container is not stopped')
         try:
             container.remove()
