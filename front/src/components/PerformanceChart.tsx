@@ -7,7 +7,8 @@ import { joinBooleanObjects, shortest } from '../utils';
 
 const useStyles = makeStyles(theme => ({
   card: {
-    backgroundColor: theme.palette.background.default
+    backgroundColor: theme.palette.background.default,
+    padding: '0.5em 0.5em'
   }
 }));
 
@@ -34,7 +35,7 @@ const FilterItem = (props: ItemFilterProps) => {
         />}
         label={<Typography variant='body1' style={{ fontWeight: 'bold' }}>{props.name}</Typography>}
       />}
-      style={{ padding: '0.5em 0.5em 0' }}
+      style={{ padding: 0 }}
     />
     <CardContent style={{ padding: '0 2em' }}>
       <Grid container direction='column' wrap='nowrap'>

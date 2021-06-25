@@ -22,10 +22,13 @@ const useStyles = makeStyles(theme => ({
   paused: {
     backgroundColor: theme.palette.info.light
   },
-  buttonCell: {
-    '& > div': {
-      display: 'flex',
-      justifyContent: 'center'
+  row: {
+    '& > td': {
+      padding: '1em',
+      height: '100%',
+      '& button': {
+        margin: '1em'
+      }
     }
   }
 }));
@@ -46,7 +49,7 @@ const ContainerRow = ({
   const classes = useStyles();
   const disabled = container.status === 'processing';
 
-  return <TableRow className={classes[container.status]} style={{ margin: '5px 0' }}>
+  return <TableRow className={`${classes[container.status]} ${classes.row}`} style={{ margin: '5px 0' }}>
     <TableCell><T>{container.id}</T></TableCell>
     <TableCell><T>{container.name}</T></TableCell>
     <TableCell><T>{container.status}</T></TableCell>
@@ -54,84 +57,74 @@ const ContainerRow = ({
       {
         Object.keys(container.ports).length === 0
           ? <T>No ports mapped</T>
-          : Object.entries(container.ports).map(([containerPort, hostPorts]) => <ul key={`${container.id}-${containerPort}`}>
-            <li>{`Container port: ${containerPort}`}</li>
-            <ul>{hostPorts.map(port => <li key={`${container.id}-${containerPort}-${port}`}>{`Host port: ${port}`}</li>)}</ul>
+          : Object.entries(container.ports).map(([containerPort, hostPorts]) => <ul key={`${container.id}-${containerPort}`} style={{ padding: 0 }}>
+            <li>{`Container: ${containerPort}`}</li>
+            <ul style={{ padding: '0 0 0 1em' }}>{hostPorts.map(port => <li key={`${container.id}-${containerPort}-${port}`}>{`Host: ${port}`}</li>)}</ul>
           </ul>)
       }
     </TableCell>
     <TableCell>
-      <Grid container spacing={1} style={{ width: 'unset', justifyContent: 'end' }} className={classes.buttonCell}>
-        <Grid item xs={2}>
-          <Button
+      <Button
+        variant="contained"
+        color="secondary"
+        startIcon={<Assignment />}
+        onClick={() => setLogs(container.id)}
+      >
+        Logs
+      </Button>
+      {
+        container.status === 'paused'
+          ? <Button
             variant="contained"
-            color="secondary"
-            startIcon={<Assignment />}
-            onClick={() => setLogs(container.id)}
+            color="primary"
+            startIcon={<PlayArrow />}
+            onClick={() => onChange('resume')}
+            disabled={disabled}
           >
-            Logs
+            Resume
           </Button>
-        </Grid>
-        <Grid item xs={2}>
-          {
-            container.status === 'paused'
-              ? <Button
-                variant="contained"
-                color="primary"
-                startIcon={<PlayArrow />}
-                onClick={() => onChange('resume')}
-                disabled={disabled}
-              >
-                Resume
-          </Button>
-              : <Button
-                variant="contained"
-                color="primary"
-                startIcon={<Pause />}
-                disabled={disabled || container.status !== 'running'}
-                onClick={() => onChange('pause')}
-              >
-                Pause
-          </Button>
-          }
-        </Grid>
-        <Grid item xs={2}>
-          {
-            container.status !== 'stopped' && container.status !== 'error'
-              ? <Button
-                variant="contained"
-                color="primary"
-                startIcon={<Stop />}
-                onClick={() => onChange('stop')}
-                disabled={disabled}
-              >
-                Stop
-          </Button>
-              : <Button
-                variant="contained"
-                color="primary"
-                startIcon={<PlayArrow />}
-                disabled={disabled}
-                onClick={() => onChange('start')}
-              >
-                Start
-          </Button>
-          }
-        </Grid>
-        <Grid item xs={2}>
-          <Button
+          : <Button
             variant="contained"
-            color="secondary"
-            startIcon={<Delete />}
-            onClick={onDelete}
-            disabled={disabled || (container.status !== 'stopped' && container.status !== 'error')}
+            color="primary"
+            startIcon={<Pause />}
+            disabled={disabled || container.status !== 'running'}
+            onClick={() => onChange('pause')}
           >
-            Delete
+            Pause
           </Button>
-        </Grid>
-      </Grid>
+      }
+      {
+        container.status !== 'stopped' && container.status !== 'error'
+          ? <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Stop />}
+            onClick={() => onChange('stop')}
+            disabled={disabled}
+          >
+            Stop
+          </Button>
+          : <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PlayArrow />}
+            disabled={disabled}
+            onClick={() => onChange('start')}
+          >
+            Start
+          </Button>
+      }
+      <Button
+        variant="contained"
+        color="secondary"
+        startIcon={<Delete />}
+        onClick={onDelete}
+        disabled={disabled || (container.status !== 'stopped' && container.status !== 'error')}
+      >
+        Delete
+      </Button>
     </TableCell>
-    <TableCell>{updating && <CircularProgress />}</TableCell>
+    <TableCell><CircularProgress style={{ opacity: updating ? 1 : 0 }} /></TableCell>
   </TableRow>;
 };
 
