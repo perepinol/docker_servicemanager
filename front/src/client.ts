@@ -5,9 +5,10 @@ import {
   ContainerStateSetter
 } from './types';
 
-const LDAP_URL = '/api/ldap';
-const PERFORMANCE_URL = '/api/performance';
-const MANAGER_URL = '/api/containermanager';
+// These are relative to properly work with <base> in the HTML
+const LDAP_URL = 'api/ldap';
+const PERFORMANCE_URL = 'api/performance';
+const MANAGER_URL = 'api/containers';
 
 export const login = (username: string, password: string): Promise<string> => fetch(LDAP_URL + '/authenticate', {
   method: 'POST',
@@ -38,6 +39,62 @@ export const getContainers = (token: string | null): Promise<Container[]> => fet
   } : undefined
 })
   .then(response => response.json());
+
+/*export const getStats = (): Promise<PerformanceData> => Promise.resolve({
+  'name': {
+    aliases: ['nameblabla'],
+    stats: [{
+      timestamp: '2021-05-29T16:06:59',
+      CPU: 1,
+      memory: 0.5
+    }]
+  },
+  'name2': {
+    aliases: ['nameblabla2'],
+    stats: [{
+      timestamp: '2021-05-29T16:06:59',
+      CPU: 0.8,
+      memory: 0.6
+    }]
+  }
+});
+
+export const getContainers = (): Promise<Container[]> => Promise.resolve([{
+  id: '1',
+  id_short: '1',
+  name: 'test',
+  status: 'processing',
+  start_time: 10,
+  ports: { '1': ['1', '3'], '2': ['2'] }
+}, {
+  id: '2',
+  id_short: '2',
+  name: 'test',
+  status: 'running',
+  start_time: 10,
+  ports: {}
+}, {
+  id: '3',
+  id_short: '3',
+  name: 'test',
+  status: 'stopped',
+  start_time: 10,
+  ports: {}
+}, {
+  id: '4',
+  id_short: '4',
+  name: 'test',
+  status: 'error',
+  start_time: 10,
+  ports: {}
+}, {
+  id: '5',
+  id_short: '5',
+  name: 'test',
+  status: 'paused',
+  start_time: 10,
+  ports: {}
+}]);*/
 
 export const setContainerState = (
   token: string | null,

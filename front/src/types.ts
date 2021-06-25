@@ -2,22 +2,20 @@ export type ContainerState = 'processing' | 'running' | 'stopped' | 'error' | 'p
 export type ContainerStateSetter = 'start' | 'stop' | 'pause' | 'resume';
 
 export type MetricName = 'CPU' | 'memory';
-interface Metrics {
-  CPU: number,
-  memory: number
-}
-export interface MetricState {
-  CPU: boolean,
-  memory: boolean
-}
-export type KeyState = {[key: string]: MetricState}
+type Metrics = {
+  [key in MetricName]: number;
+};
+export type MetricState = {
+  [key in MetricName]: boolean;
+};
+export type KeyState = { [key: string]: MetricState; };
 
 export interface JWTData {
   exp: number,
   iat: unknown,
   user_name: string,
   full_name: string,
-  gid: number
+  gid: number;
 }
 
 export interface Container {
@@ -26,21 +24,21 @@ export interface Container {
   name: string,
   status: ContainerState,
   start_time: number,
-  ports: {[key: string]: string[]}
+  ports: { [key: string]: string[]; };
 }
 
 export interface PerformanceStats extends Metrics {
-  timestamp: string
+  timestamp: string;
 }
 
 export interface PerformanceContainer {
   aliases: string[],
-  stats: PerformanceStats[]
+  stats: PerformanceStats[];
 }
 
-export type PerformanceData = {[key: string]: PerformanceContainer}
+export type PerformanceData = { [key: string]: PerformanceContainer; };
 
-export type GoogleChartsData = (({type: string, label: string} | string)[] | (number | number[] | null)[])[];
+export type GoogleChartsData = (({ type: string, label: string; } | string)[] | (number | number[] | null)[])[];
 
 export interface ChartHookData {
   data: PerformanceData,
@@ -49,5 +47,5 @@ export interface ChartHookData {
 
   refresh: () => void,
   asGoogleChartData: () => GoogleChartsData,
-  changeState: (container: string) => (key: MetricName, newState: boolean) => void
+  changeState: (container: string) => (key: MetricName, newState: boolean) => void;
 }

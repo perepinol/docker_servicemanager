@@ -1,5 +1,1 @@
-import { AdminPanel } from './admin';
-
-export {
-  AdminPanel
-}
+export { AdminPanel } from './AdminPanel'

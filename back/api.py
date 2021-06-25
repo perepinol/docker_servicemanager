@@ -10,9 +10,11 @@ from requests import get, post
 from requests.exceptions import ConnectionError
 import docker
 
-LDAP_URL = os.getenv('LDAPJWT_URL').rstrip('/')
-ADMIN_GID = int(os.getenv('ADMIN_GID'))
-CADVISOR_URL = os.getenv('CADVISOR_URL').rstrip('/')
+LDAP_URL = os.getenv('LDAPJWT_URL')
+LDAP_URL = LDAP_URL.rstrip('/') if LDAP_URL else None
+CADVISOR_URL = os.getenv('CADVISOR_URL')
+CADVISOR_URL = CADVISOR_URL.rstrip('/') if CADVISOR_URL else None
+ADMIN_GID = os.getenv('ADMIN_GID')
 
 
 def nanosecond_delta(start, end):
@@ -164,7 +166,7 @@ class JWTMiddleware(object):
             raise falcon.HTTPUnauthorized('Validation failed with %d' % res.status_code, res.text)
 
         user = res.json()
-        if ADMIN_GID and int(user['gid']) != ADMIN_GID:
+        if ADMIN_GID and user['gid'] != ADMIN_GID:
             raise falcon.HTTPUnauthorized('User is not administrator')
 
         req.context = user
@@ -180,8 +182,7 @@ api = falcon.API(middleware=[
 )
 containerResource = ContainerResource()
 api.add_route('/performance', Performance())
-api.add_route('/manager/{cont_id}/{command}/', containerResource, suffix='status')  # POST status
-api.add_route('/manager/{cont_id}/logs', containerResource, suffix='logs')  # GET logs
-api.add_route('/manager/{cont_id}/', containerResource, suffix='cont')  # DELETE
-api.add_route('/manager', containerResource)  # GET
-api.add_static_route('/front', '/build', fallback_filename='index.html')
+api.add_route('/containers/{cont_id}/{command}/', containerResource, suffix='status')  # POST status
+api.add_route('/containers/{cont_id}/logs', containerResource, suffix='logs')  # GET logs
+api.add_route('/containers/{cont_id}/', containerResource, suffix='cont')  # DELETE
+api.add_route('/containers', containerResource)  # GET

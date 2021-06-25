@@ -4,25 +4,26 @@ import { getLogs } from '../client';
 interface LogHookData {
   logs: string[],
   logsOpen: boolean,
-  setLogsOpen: (open: boolean) => void,
+  setLogs: (id: string) => void,
   since: number,
   until: number,
   setFilters: (since: number, until: number) => void,
-  logsLoading: boolean
+  logsLoading: boolean;
 }
 
 const DEFAULT_SINCE = -5 * 60;
 
-export const useLogs = (token: string | null, id: string, time_offset: number): LogHookData => {
+export const useLogs = (token: string | null, time_offset: number): LogHookData => {
   const [logs, setLogs] = useState<string[]>([]);
-  const [logsOpen, setLogsOpen] = useState(false);
+  const [containerId, setContainerId] = useState<string>();
   const [logsLoading, setLogsLoading] = useState(false);
   const [since, setSince] = useState(DEFAULT_SINCE < time_offset ? time_offset : DEFAULT_SINCE);
   const [until, setUntil] = useState(0);
 
   const refresh = () => {
+    if (!containerId) return;
     setLogsLoading(true);
-    getLogs(token, id, since, until)
+    getLogs(token, containerId, since, until)
       .then(logs => {
         setLogs(logs);
         setLogsLoading(false);
@@ -31,18 +32,18 @@ export const useLogs = (token: string | null, id: string, time_offset: number): 
   };
 
   useEffect(() => {
-    if (logsOpen) {
+    if (containerId) {
       refresh();
       const interval = setInterval(refresh, 1000);
       return () => clearInterval(interval);
     }
-  }, [logsOpen, since, until]);
+  }, [containerId, since, until]);
 
   return {
     logs,
 
-    logsOpen,
-    setLogsOpen,
+    logsOpen: !!containerId,
+    setLogs: setContainerId,
 
     since,
     until,

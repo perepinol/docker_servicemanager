@@ -11,6 +11,21 @@ import {
   GoogleChartsData
 } from '../types';
 
+const fillArray = <T>(arr: T[] = [], fill: T, l: number): T[] => {
+  return arr.concat(Array.from(Array(l - arr.length).keys()).map(() => fill));
+};
+
+const compareLists = (list1: number[], list2: number[]): number => {
+  let i = 0;
+  while (i < list1.length && i < list2.length) {
+    if (list1[i] !== list2[i]) {
+      return list2[i] - list1[i];
+    }
+    i += 1;
+  }
+  return list2.length - list1.length;
+};
+
 export const useChart = (token: string | null): ChartHookData => {
   const [data, setData] = useState<PerformanceData>({});
   const [keyState, setKeyState] = useState<KeyState>({});
@@ -21,47 +36,33 @@ export const useChart = (token: string | null): ChartHookData => {
       .forEach(id => {
         newKeyState[id] = { CPU: true, memory: true };
       });
+    setKeyState(newKeyState);
   };
 
-  const changeState = (container: string) => {
-    return (key: MetricName, newState: boolean) => {
-      const newKeyState = { ...keyState };
-      newKeyState[container][key] = newState;
-      setKeyState(newKeyState);
-    };
-  };
+  const changeState = (container: string) => (key: MetricName, newState: boolean) => setKeyState(prev => ({
+    ...prev,
+    [container]: {
+      ...prev[container],
+      [key]: newState
+    }
+  }));
 
-  const refresh = () => {
-    getStats(token)
-      .then(stats => {
-        setData(stats);
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  };
+  const refresh = () => getStats(token)
+    .then(stats => {
+      setData(stats);
+    })
+    .catch(err => {
+      console.log(err);
+    });
 
   const asGoogleChartData = (): GoogleChartsData => {
     if (Object.keys(data).length === 0 || !Object.values(keyState).some(obj => Object.values(obj).reduce((x, y) => x || y))) {
       return [['time', ''], [0, 0]];
     }
-    const fillArray = <T>(arr: T[] = [], fill: T, l: number): T[] => {
-      return arr.concat(Array.from(Array(l - arr.length).keys()).map(() => fill));
-    };
-    const compareLists = (list1: number[], list2: number[]): number => {
-      let i = 0;
-      while (i < list1.length && i < list2.length) {
-        if (list1[i] !== list2[i]) {
-          return list2[i] - list1[i];
-        }
-        i += 1;
-      }
-      return list2.length - list1.length;
-    };
 
     const format = 'HH:mm:ss';
     const headers: string[] = [];
-    const dataObj: {[key: string]: (number | null)[]} = {};
+    const dataObj: { [key: string]: (number | null)[]; } = {};
 
     // Make a data object with timestamp as keys and the rest of values as should appear in the chart
     Object.entries(data).forEach(([id, item]) => {
@@ -72,8 +73,8 @@ export const useChart = (token: string | null): ChartHookData => {
         dataObj[timestamp] = fillArray(dataObj[timestamp], null, headers.length)
           .concat(includedKeys.map(key => stat[key] * 100));
       });
-      headers.push(...includedKeys.map(key => shortest(item.aliases) + ' - ' + key))
-    })
+      headers.push(...includedKeys.map(key => shortest(item.aliases) + ' - ' + key));
+    });
 
     // Fill rows that are not complete
     for (const ts in dataObj) {
